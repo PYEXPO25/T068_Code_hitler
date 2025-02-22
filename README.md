@@ -1,3 +1,4 @@
 Infant Crying Reason Detector
 The Infant Crying Reason Detector is a smart AI-based system designed to analyze a baby’s cry and determine the possible reason behind it, such as hunger, discomfort, belly pain, tiredness, or burping. The system records the baby's cry using a microphone, converts it into a spectrogram, and compares it with pre-stored reference spectrograms to find the best match. This project uses various Python libraries for the backend and HTML for the frontend, making it easy for parents to use. Users simply press a button to record, and the system automatically detects the likely reason for the baby's cry. If needed, the system also provides doctor contact details for further assistance. This tool helps parents and caregivers understand their infant’s needs better, reducing stress and improving baby care.
 In future we have an idea to implement our project into Prototype(Hardware) by using raspberry pi.
+YOUTUBE LINK:https://youtu.be/CKyw_HsuRo4
