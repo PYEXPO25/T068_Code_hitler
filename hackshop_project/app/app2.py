@@ -7,17 +7,23 @@ import cv2
 from scipy.spatial.distance import cosine
 from flask import Flask, render_template, request, jsonify
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates")  # ✅ Ensure Flask knows where templates are
 
 # ✅ Paths
-REFERENCE_FOLDER = r"C:\Users\sabar\OneDrive\Desktop\T068_Code_hitler\hackshop_project\spectrum_audio\preprocess_audio"
-RECORDED_AUDIO_FILE = "static/recorded_audio.wav"  # Save recorded audio
-DURATION = 5  # Record for 5 seconds
-SAMPLE_RATE = 44100  # CD-quality audio
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+REFERENCE_FOLDER = os.path.join(BASE_DIR, "preprocess_audio")
+STATIC_FOLDER = os.path.join(BASE_DIR, "static")
+RECORDED_AUDIO_FILE = os.path.join(STATIC_FOLDER, "recorded_audio.wav")
+DURATION = 5  
+SAMPLE_RATE = 44100  
+
+# ✅ Ensure directories exist
+os.makedirs(REFERENCE_FOLDER, exist_ok=True)
+os.makedirs(STATIC_FOLDER, exist_ok=True)
 
 @app.route("/")
 def home():
-    return render_template("index.html")  # Load frontend
+    return render_template("index.html")  # ✅ Fixed path to templates/index.html
 
 @app.route("/record", methods=["POST"])
 def record_audio():
@@ -26,27 +32,25 @@ def record_audio():
     sd.wait()
     print("✅ Recording finished!")
 
-    # Save recorded audio
     wavio.write(RECORDED_AUDIO_FILE, audio, SAMPLE_RATE, sampwidth=2)
 
-    # ✅ Step 2: Convert Recorded Audio to Spectrogram
+    # ✅ Convert Recorded Audio to Spectrogram
     y_rec, sr_rec = librosa.load(RECORDED_AUDIO_FILE, sr=None)
-    spectrogram_rec = np.abs(librosa.stft(y_rec))  # Do NOT flatten yet
+    spectrogram_rec = np.abs(librosa.stft(y_rec))
 
-    # ✅ Step 3: Compare with Precomputed Spectrogram Images
     best_match = None
-    best_similarity = float("inf")  # Lower = More Similar
+    best_similarity = float("inf")  
 
     print("\n🔍 Comparing with precomputed spectrograms...")
 
     for folder in os.listdir(REFERENCE_FOLDER):
         folder_path = os.path.join(REFERENCE_FOLDER, folder)
 
-        if os.path.isdir(folder_path):  # ✅ Ensure it's a folder
+        if os.path.isdir(folder_path):  
             print(f"📂 Checking category: {folder}")
 
             for file in os.listdir(folder_path):
-                if file.endswith(".png"):  # ✅ Precomputed spectrograms are in PNG format
+                if file.endswith(".png"):  
                     file_path = os.path.join(folder_path, file)
 
                     # ✅ Load Reference Spectrogram Image
@@ -56,22 +60,29 @@ def record_audio():
                         print(f"❌ Could not load {file_path}")
                         continue
 
-                    # ✅ Resize Input Spectrogram to Match Reference Image Size
-                    spectrogram_rec_resized = cv2.resize(np.abs(spectrogram_rec), (spectrogram_ref.shape[1], spectrogram_ref.shape[0]))
+                    # ✅ Resize (or Crop) Spectrograms
+                    min_height = min(spectrogram_rec.shape[0], spectrogram_ref.shape[0])
+                    min_width = min(spectrogram_rec.shape[1], spectrogram_ref.shape[1])
+
+                    spectrogram_rec_cropped = spectrogram_rec[:min_height, :min_width]
+                    spectrogram_ref_cropped = spectrogram_ref[:min_height, :min_width]
+
+                    # ✅ Normalize & Convert to Float
+                    spectrogram_rec_cropped = cv2.normalize(spectrogram_rec_cropped, None, 0, 1, cv2.NORM_MINMAX).astype(np.float32)
+                    spectrogram_ref_cropped = cv2.normalize(spectrogram_ref_cropped, None, 0, 1, cv2.NORM_MINMAX).astype(np.float32)
 
                     # ✅ Flatten Both Spectrograms for Comparison
-                    spectrogram_rec_flat = spectrogram_rec_resized.flatten()
-                    spectrogram_ref_flat = spectrogram_ref.flatten()
+                    spectrogram_rec_flat = spectrogram_rec_cropped.flatten()
+                    spectrogram_ref_flat = spectrogram_ref_cropped.flatten()
 
                     # 🔹 Compute Cosine Similarity (Lower = More Similar)
                     similarity = cosine(spectrogram_rec_flat, spectrogram_ref_flat)
 
                     print(f"   🖼 {file} → Similarity Score: {similarity:.4f}")
 
-                    # ✅ Update Best Match
                     if similarity < best_similarity:
                         best_similarity = similarity
-                        best_match = folder  # Save Best-Matching Category
+                        best_match = folder  
 
     # 🔥 Step 4: Output Best-Matching Category
     if best_match:
