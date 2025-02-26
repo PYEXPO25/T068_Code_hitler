@@ -15,7 +15,6 @@ Burping
 Discomfort
 Tired
 This system will help parents, caregivers, and healthcare professionals respond more effectively to an infant’s needs.
-
 Team Members
 Team ID – T068
 Member 1(sabarinathan) - software(backend)
