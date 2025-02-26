@@ -18,9 +18,6 @@ This system will help parents, caregivers, and healthcare professionals respond 
 
 Team Members
 Team ID – T068
-
-List your team members along with their roles.
-
 Member 1(sabarinathan) - software(backend)
 Member 2 (mohamad mydeen)- software(backend)
 Member 3 (gopi)- hardware(in future develorment)
